@@ -1,0 +1,171 @@
+---
+title: "CARDIA-ADPQS-replication"
+author: "LekkiWood (LekkiWood@Gmail.com)"
+date: today
+format:
+  pdf:
+    pdf-engine: lualatex
+    includes:
+      in_header: 'gt_packages.sty'
+    header-includes:
+      - \usepackage{pdflscape}
+      - \setkeys{Gin}{width=\linewidth,height=0.9\textheight,keepaspectratio}
+    toc: true
+    toc-depth: 4
+crossref:
+  tbl-prefix: "Table"
+  fig-prefix: "Figure"
+execute:
+  echo: false
+  warning: false
+  message: false
+  # ensure chunks run from the project root (where _targets/ lives)
+  dir: project
+pdf-engine: lualatex
+editor: visual
+---
+
+```{r}
+
+#| label: load-packages
+#| cache: true
+
+
+## Load targets
+if (!requireNamespace("targets", quietly = TRUE)) {
+  stop("The {targets} package is not installed/available in this render session.")
+}
+
+## Load knitr
+if (!requireNamespace("knitr", quietly = TRUE)) {
+  stop("The {knitr} package is not installed/available in this render session.")
+}
+
+## Load quarto
+if (!requireNamespace("quarto", quietly = TRUE)) {
+  stop("The {quarto} package is not installed/available in this render session.")
+}
+
+## Load gtsummary
+if (!requireNamespace("gtsummary", quietly = TRUE)) {
+  stop("The {gtsummary} package is not installed/available in this render session.")
+}
+
+## Load ggplot
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  stop("The {ggplot2} package is not installed/available in this render session.")
+}
+
+## Load ggrepel
+if (!requireNamespace("ggrepel", quietly = TRUE)) {
+  stop("The {ggrepel} package is not installed/available in this render session.")
+}
+
+## Load naniar
+if (!requireNamespace("naniar", quietly = TRUE)) {
+  stop("The {naniar} package is not installed/available in this render session.")
+}
+
+## Load interactions
+if (!requireNamespace("interactions", quietly = TRUE)) {
+  stop("The {naniar} package is not installed/available in this render session.")
+}
+
+## Load MLM
+if (!requireNamespace("lme4", quietly = TRUE)) {
+  stop("The {naniar} package is not installed/available in this render session.")
+}
+
+## Load Venn
+if (!requireNamespace("VennDiagram", quietly = TRUE)) {
+  stop("The {VennDiagram} package is not installed/available in this render session.")
+}
+
+## Load Scales
+if (!requireNamespace("scales", quietly = TRUE)) {
+  stop("The {VennDiagram} package is not installed/available in this render session.")
+}
+```
+
+\newpage
+
+# Important Notes - read me first
+
+## Version control
+
+-   Always check that you have the most recent version of this document, which - unless I am sending you unfinalized work - is available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/CARDIA-ADPQS-replication.pdf).
+
+-   An easy check for version control is to make sure this date: `r Sys.Date()`. is the same as on the GitHub file [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/CARDIA-ADPQS-replication.pdf).
+
+-   The code for this is analysis available in the same repository ([targets master file here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/_targets.R) and [individual functions here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/tree/main/R))
+
+
+
+
+# Step 1: Cleaning and Formatting Proteins
+
+```{r}
+#| label: load-filename-info
+#| cache: true
+
+#General QC info
+QC_info <- targets::tar_read(build_proteins_QC)
+
+#Final N
+finalclean_N_by_exam <- targets::tar_read(Proteins_clean_N)
+```
+
+## Input file names
+
+-   A table of protein abundances: `{r} print(unlist(strsplit(QC_info$filenames$raw_proteins_file_name, split="/"))[8])`
+-   Sample information to link TOPMed IDs to unique MESA SHARe ID and exam combinations: `{r} print(unlist(strsplit(QC_info$filenames$raw_protein_info_file_name, split="/"))[8])`
+-   Keys to link Olink IDs to names compounds: `{r} print(unlist(strsplit(QC_info$filenames$ raw_protein_keys_file_name, split="/"))[8])`
+-   A file to bridge SHARe ids (sidno) with MESA IDs (idno) `{r} print(unlist(strsplit(QC_info$filenames$raw_bridgingfile_file_name, split="/"))[7])`
+
+## Raw file info
+
+-   The raw protein abundance file contained information on N=`{r} print(QC_info$raw_inputs$raw_protein_N_all)` protein assays, including those used for QC.
+
+-   When removing assays for QC, the raw protein abundance file contained information on N=`{r} print(QC_info$raw_inputs$raw_protein_N_proteins[1,1])` proteins.
+
+-   The protein abundance file contained information on N=`{r} print(QC_info$raw_inputs$raw_N_all)` sample IDs (i.e., unique participant/exam combinations), including bridging samples.
+
+-   After removing QC samples (including bridging, controls, and one duplicate) the protein abundance file contained information on N=`{r} print(QC_info$raw_inputs$raw_N_nobridge)` sample IDs (i.e., unique participant/exam combinations).
+
+### Formatting
+
+-   Bridging (and other QC) samples were removed.
+
+-   Protein assays used for QC were removed.
+
+-   Proteins that should be excluded due to QC warnings (variable "QC_warning" set to "EXCLUDED") were removed, even though these do not have NPX values.
+
+-   Data were put into wide format, with "SampleID" as the unique ID, "OlinkID" forming the variable names (protein identifiers), and values taken from the "NPX" column.
+
+-   In wide format, the file contained information on N=`{r} print(QC_info$formatted_protein_file_info$unique_sampleids)` unique sample IDs.
+
+-   In wide format, the file contained information on N=`{r} print(QC_info$formatted_protein_file_info$duplicated_sampleids)` duplicated sample IDs. ^1^
+
+-   SHARe IDs, and subsequently MESA IDs, were merged into the file with exam information.
+
+-   At this point, the range of unique SHARe ID by exam combinations was N=`{r} range(QC_info$initial_dupes$Freq)[1]` - `{r} range(QC_info$initial_dupes$Freq)[2]`. This indicates no sample ID were duplicated in the assays.
+
+-   The formatted protein file was used to calculate the coefficient of variation (CV) using the formula: CV = sqrt(2`^`(sigma`^`2)-1).
+
+-   A variable called "Retain" was created to indicate whether each protein was (1) unique (i.e., included on only one panel); (2) duplicated, and across all panels had the lowest CV; or (3) duplicated, and across all panels did not have the lowest CV.
+
+-   A final table of protein abundances, with additional variables for SHARe ID, MESA ID, Exam, TOPMed ID and Batch, was created after the steps above, with proteins duplicated across more than one panel cleaned such that only the one with the lowest CV is retained. This file was used in the analysis
+
+-   The number of participants, stratified by exam, in the final file is available in @tbl-final-N-by-exam:
+
+```{r}
+#| label: tbl-final-N-by-exam
+#| tbl-cap: Final N by exam
+#| cache: true
+
+knitr::kable(finalclean_N_by_exam, format="latex") #print(knitr::kable(finalclean_N_by_exam))
+```
+
+\newpage
+
+
