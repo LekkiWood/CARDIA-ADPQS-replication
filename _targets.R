@@ -78,9 +78,29 @@ list(
   #--------------------------------2. Build traits table----------------------------------#
   #---------------------------------------------------------------------------------------#
   
+  #------------Files-------
+  #E1_covs
+  tar_target(path_E1_covs, "/media/RawData/MESA/MESA-Phenotypes/MESA-Website-Phenos/MESAe1FinalLabel02092016.dta", format = "file"),
   
+  #E1_nutrients
+  tar_target(path_E1_nutr, "/media/RawData/MESA/MESA-Phenotypes/MESA-SHARe-Phenos/E1_nutrients_new.csv", format = "file"),
   
+  #CVD events
+  tar_target(path_cvd, "/media/RawData/MESA/MESA-Phenotypes/MESA-Website-Phenos/MESAEvThru2020AllCohort_20241120.dta", format = "file"),
+  
+  #------------Function-------
+  tar_target(build_traits, build_traits_function(path_E1_covs = path_E1_covs,
+                                                 path_E1_nutr = path_E1_nutr,
+                                                 path_bridge = path_bridge,
+                                                 path_cvd = path_cvd,
+                                                 cleaned_proteins = Proteins_long)),
 
+  #------------Outputs-------
+  
+  #Filenames and missingness
+  tar_target(traits_QC_info, build_traits$QC_info_out),
+  #Trait data
+  tar_target(traits_db, build_traits$Traits_table),
   
   #---------------------------------------------------------------------------------------#
   #--------------------------------Quarto output------------------------------------------#
