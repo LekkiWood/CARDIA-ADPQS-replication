@@ -184,9 +184,9 @@ Traits_db <- targets::tar_read(traits_db)
 ## Coding
 
 ### Outcomes
+
 -   CVD event data was time to any hard CVD event, as defined by MESA.
 -   The total number of person years included in the analysis is `{r} print(sum(Traits_db$cvdhtt, na.rm=TRUE)/365)`.
-
 
 ### Covariates
 
@@ -201,19 +201,18 @@ Traits_db <- targets::tar_read(traits_db)
 -   eGFR is eGFR at baseline
 -   Systolic blood pressure was taken seated at baseline
 -   HDL is HDL-C in mg/dL at baseline
--   Total cholesterol is is mg/dL at baseline 
+-   Total cholesterol is is mg/dL at baseline
 -   Use of hypertension medication is a factor variable; coded 0 = No, 1 = yes
 -   Use of cholesterol lowering medication is a factor variable for use of any lipid-lowerting medication; coded 0 = No, 1 = yes
 
-
-Note:  Visceral fat was not available
+Note: Visceral fat was not available
 
 ## Sample description
 
 -   There are N=`{r} print(length(unique(Traits_QC_info$IDs$protein_ids$idno)))` individuals with Olink protein data at exam 1.
 -   Of these, N=`{r} print(length(unique(Traits_QC_info$IDs$nocvd_ids$idno)))` individuals did not have CVD data, leaving a sample of N=`{r} print(length(unique(Traits_QC_info$IDs$cvd_ids$idno)))`
 -   Of these, N=`{r} print(length(unique(Traits_QC_info$IDs$nodiet_ids$idno)))` individuals did not have diet data, and a further N=`{r} print(length(unique(Traits_QC_info$IDs$highenergy_ids$idno)))` had diet data outside the acceptable range (800-8000 kcals / day for men, 600-6000 kcals / day for women) leaving a sample of N=`{r} print(length(unique(Traits_QC_info$IDs$diet_ids$idno)))`.
--  Sample descriptives are available in @tbl-of-descriptives
+-   Sample descriptives are available in @tbl-of-descriptives
 
 ::: landscape
 ```{r}
@@ -318,5 +317,4 @@ rm(table1)
 
 
 ```
-
 :::

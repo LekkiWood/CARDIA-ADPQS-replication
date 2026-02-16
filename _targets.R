@@ -103,6 +103,96 @@ list(
   tar_target(traits_db, build_traits$Traits_table),
   
   #---------------------------------------------------------------------------------------#
+  #--------------------------------3. Make Protein Scores---------------------------------#
+  #---------------------------------------------------------------------------------------#
+  
+  #------------Files-------
+  #E1_covs
+  tar_target(path_betas, "/media/Analyses/CARDIA-ADPQS-replication/Data/diet-MESA-lasso-coefs-2026-02-06.csv", format = "file"),
+  
+  
+  #------------APDQS-------
+  #------------Function-------
+  # Build standard scores 
+  tar_target(
+    build_APDQS_score,
+    build_weighted_score_from_LASSO (
+      path_betas  = path_betas,
+      abund_df    = Proteins_long,
+      beta_col    = "lasso_APDQS",
+      id_col      = "idno",
+      time_col    = "Exam",            
+      score_name  = "APDQS_protein_score",
+      verbose     = TRUE,
+      na_rm       = TRUE,            # <-- robust to NA by exam
+      min_non_missing = 3,
+      metabolite_col   = "OlinkID"
+    )
+  ),
+  
+  #------------Outputs-------
+  
+  #QC info
+  tar_target(APDQS_QC_info, build_APDQS_score$score_info),
+  #Scores
+  tar_target(APDQS_protein_scores,  build_APDQS_score$scores),
+  
+  #------------Meat-------
+  #------------Function-------
+  # Build standard scores 
+  tar_target(
+    build_meat_score,
+    build_weighted_score_from_LASSO (
+      path_betas  = path_betas,
+      abund_df    = Proteins_long,
+      beta_col    = "lasso_Meat_Score",
+      id_col      = "idno",
+      time_col    = "Exam",            
+      score_name  = "Meat_protein_score",
+      verbose     = TRUE,
+      na_rm       = TRUE,            # <-- robust to NA by exam
+      min_non_missing = 3,
+      metabolite_col   = "OlinkID"
+    )
+  ),
+  
+  #------------Outputs-------
+  
+  #QC info
+  tar_target(meat_QC_info, build_meat_score$score_info),
+  #Scores
+  tar_target(meat_protein_scores,  build_meat_score$scores),
+  
+  #------------Plant-------
+  #------------Function-------
+  # Build standard scores 
+  tar_target(
+    build_plant_score,
+    build_weighted_score_from_LASSO (
+      path_betas  = path_betas,
+      abund_df    = Proteins_long,
+      beta_col    = "lasso_Plant_Score",
+      id_col      = "idno",
+      time_col    = "Exam",            
+      score_name  = "Plant_protein_score",
+      verbose     = TRUE,
+      na_rm       = TRUE,            # <-- robust to NA by exam
+      min_non_missing = 3,
+      metabolite_col   = "OlinkID"
+    )
+  ),
+  
+  #------------Outputs-------
+  
+  #QC info
+  tar_target(plant_QC_info, build_plant_score$score_info),
+  #Scores
+  tar_target(plant_protein_scores,  build_plant_score$scores),
+  
+  
+  
+  
+  #---------------------------------------------------------------------------------------#
   #--------------------------------Quarto output------------------------------------------#
   #---------------------------------------------------------------------------------------#
   
