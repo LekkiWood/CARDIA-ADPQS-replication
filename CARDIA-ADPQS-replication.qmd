@@ -375,6 +375,8 @@ Three scores were created:
 
 -   Separate cox-proportional hazards models were run for each protein score with time to CVD (hard). 
 -   All continuous variables were standardized
+-   For the minimally adjusted models, data were included from N=`{r} survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores)$n` individuals.
+-   For the fully adjusted models, data were included from N=`{r} survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores)$n` individuals.
 -   Estimates for the minimally adjusted models are in @tbl-cox-min
 -   Estimates for the fully adjusted models are in @tbl-cox-full
 
