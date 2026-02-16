@@ -85,6 +85,11 @@ if (!requireNamespace("VennDiagram", quietly = TRUE)) {
 if (!requireNamespace("scales", quietly = TRUE)) {
   stop("The {VennDiagram} package is not installed/available in this render session.")
 }
+
+## Load Survival
+if (!requireNamespace("survival", quietly = TRUE)) {
+  stop("The {VennDiagram} package is not installed/available in this render session.")
+}
 ```
 
 \newpage
@@ -318,3 +323,251 @@ rm(table1)
 
 ```
 :::
+
+# Step 3: Build Scores
+
+```{r}
+#| label: read-in-score-info
+#| cache: TRUE
+
+#Files
+betas_file <- targets::tar_read(path_betas)
+#Score info
+APDQS_QC_info <- targets::tar_read(APDQS_QC_info)
+plant_QC_info <- targets::tar_read(plant_QC_info)
+meat_QC_info <- targets::tar_read(meat_QC_info)
+
+
+scores <- (targets::tar_read(APDQS_protein_scores) |> dplyr::filter(! is.na(idno))) |>
+  dplyr::full_join((targets::tar_read(meat_protein_scores) |> dplyr::filter(! is.na(idno))), dplyr::join_by(idno, Exam)) |>
+  dplyr::full_join((targets::tar_read(plant_protein_scores) |> dplyr::filter(! is.na(idno))), dplyr::join_by(idno, Exam)) |>
+  dplyr::filter(Exam==1) |>
+  dplyr::select(-Exam) |>
+  dplyr::left_join((Traits_db |> 
+                      dplyr::mutate(idno = as.factor(idno))), dplyr::join_by(idno))
+```
+
+## Input files
+
+Weights from the LASSO model were taken from the following file: `{r} print(unlist(strsplit(betas_file, split="/"))[6])`
+
+## Create scores
+
+Three scores were created:
+
+1.  ADPQS score
+
+  -   The LASSO file included N=`{r} APDQS_QC_info$Sig_targets_n` proteins selected as variables of importance to  ADPQS scores in the LASSO (N=`{r} APDQS_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
+  -   N=`{r} length(APDQS_QC_info$Included_targets)` of these proteins were available in MESA and included in the score. 
+
+2.  Meat score
+
+  -   The LASSO file included N=`{r} meat_QC_info$Sig_targets_n` proteins selected as variables of importance to "Mea" scores in the LASSO (N=`{r} meat_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
+  -   N=`{r} length(meat_QC_info$Included_targets)` of these proteins were available in MESA and included in the scotre. 
+
+3.  Plant score
+
+  -   The LASSO file included N=`{r} plant_QC_info$Sig_targets_n` proteins selected as variables of importance to "Plant" scores in the LASSO (N=`{r} plant_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
+  -   N=`{r} length(plant_QC_info$Included_targets)` of these proteins were available in MESA and included in the score.
+  
+
+# Step 4: Associations of Scores with CVD
+
+-   Separate cox-proportional hazards models were run for each protein score with time to CVD (hard). 
+-   All continuous variables were standardized
+-   Estimates for the minimally adjusted models are in @tbl-cox-min
+-   Estimates for the fully adjusted models are in @tbl-cox-full
+
+
+
+
+
+    
+:::landscape
+```{r}
+#| label: tbl-cox-min
+#| tbl-cap: "Cox Proportional Hazards Models (minimally adjusted)"
+#| echo: false
+#| message: false
+
+
+# Fit model
+
+fitdata <- scores |>
+  dplyr::mutate(
+        sex = factor(sex,
+                       levels = c("1", "2"),
+                       labels = c("Female", "Male")),
+         race = factor(race,
+                       levels = c("1", "2", "3", "4"),
+                       labels = c("Non-Hispanic White", "Chinese American", "Black/African-American", "Hispanic")),
+        diabetes = factor(diabetes,
+                               levels = c("0", "1"),
+                               labels = c("Normoglycemia/IFG", "Diabetes (treated or untreated)")),
+        htnmeds = factor(htnmeds,
+                       levels = c("0", "1"),
+                       labels = c("No", "Yes")),
+        lipidmeds = factor(lipidmeds,
+                       levels = c("0", "1"),
+                       labels = c("No", "Yes"))
+  )
+
+fit1 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(APDQS_protein_score)" ~ "APDQS Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)")
+  ) 
+
+fit2 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(Plant_protein_score)" ~ "Plant Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)")
+  ) 
+
+fit3 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(Meat_protein_score)" ~ "Meat Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)")
+  ) 
+
+merged_table <- gtsummary::tbl_merge(
+  tbls = list(fit1, fit3, fit2),
+  tab_spanner = c("Model 1: APDQS Score", "Model 2: Meat Score", "Model 3: Plant Score") 
+)   |>
+ gtsummary::modify_table_body(~dplyr::arrange(.x, !variable %in% c("scale(APDQS_protein_score)", "scale(Meat_protein_score)", "scale(Plant_protein_score)"), variable)) |>
+  gtsummary::as_gt() |>
+  gt::tab_options(page.orientation = "landscape") |>
+  gt::tab_options(latex.use_longtable = TRUE)
+
+
+merged_table
+rm(merged_table)
+```
+
+\newpage
+
+```{r}
+#| label: tbl-cox-full
+#| tbl-cap: "Cox Proportional Hazards Models (fully adjusted)"
+#| echo: false
+#| message: false
+#| cache: TRUE
+
+
+# Fit model
+
+fitdata <- scores |>
+  dplyr::mutate(
+        sex = factor(sex,
+                       levels = c("1", "2"),
+                       labels = c("Female", "Male")),
+         race = factor(race,
+                       levels = c("1", "2", "3", "4"),
+                       labels = c("Non-Hispanic White", "Chinese American", "Black/African-American", "Hispanic")),
+        diabetes = factor(diabetes,
+                               levels = c("0", "1"),
+                               labels = c("Normoglycemia/IFG", "Diabetes (treated or untreated)")),
+        htnmeds = factor(htnmeds,
+                       levels = c("0", "1"),
+                       labels = c("No", "Yes")),
+        lipidmeds = factor(lipidmeds,
+                       levels = c("0", "1"),
+                       labels = c("No", "Yes"))
+  )
+
+fit1 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(APDQS_protein_score)" ~ "APDQS Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)",
+    "scale(smoking)" ~ "Smoking status (pack years)",
+    "scale(SBP)" ~ "Systolic blood pressure",
+    "scale(HDL)" ~ "HDL",
+    "scale(cholesterol)" ~ "Total cholesterol",
+    "factor(diabetes)" ~ "Diabetes Status",
+    "factor(htnmeds)" ~ "Takes blood pressure medication",
+    "factor(lipidmeds)" ~ "Takes lipid lowering medication"
+    )
+  ) 
+
+fit2 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(Plant_protein_score)" ~ "Plant Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)",
+    "scale(smoking)" ~ "Smoking status (pack years)",
+    "scale(SBP)" ~ "Systolic blood pressure",
+    "scale(HDL)" ~ "HDL",
+    "scale(cholesterol)" ~ "Total cholesterol",
+    "factor(diabetes)" ~ "Diabetes Status",
+    "factor(htnmeds)" ~ "Takes blood pressure medication",
+    "factor(lipidmeds)" ~ "Takes lipid lowering medication"
+    )
+  ) 
+
+fit3 <- survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = fitdata) |>
+  gtsummary::tbl_regression(exponentiate = TRUE,
+                            label = list(
+    "scale(Meat_protein_score)" ~ "Meat Protein score",
+    "scale(age)" ~  "Age (years)",
+    "scale(BMI)" ~  "BMI, (kg/m2)", 
+    "factor(sex)" ~  "Sex",
+    "scale(eGFR)" ~  "eGFR",
+    "factor(race)" ~  "Race / ethnicity",
+    "scale(energy)" ~  "Energy intake (kcals/day)",
+    "scale(smoking)" ~ "Smoking status (pack years)",
+    "scale(SBP)" ~ "Systolic blood pressure",
+    "scale(HDL)" ~ "HDL",
+    "scale(cholesterol)" ~ "Total cholesterol",
+    "factor(diabetes)" ~ "Diabetes Status",
+    "factor(htnmeds)" ~ "Takes blood pressure medication",
+    "factor(lipidmeds)" ~ "Takes lipid lowering medication"
+    )
+  ) 
+
+merged_table <- gtsummary::tbl_merge(
+  tbls = list(fit1, fit3, fit2),
+  tab_spanner = c("Model 1: APDQS Score", "Model 2: Meat Score", "Model 3: Plant Score") 
+)   |>
+ gtsummary::modify_table_body(~dplyr::arrange(.x, !variable %in% c("scale(APDQS_protein_score)", "scale(Meat_protein_score)", "scale(Plant_protein_score)"), variable)) |>
+  gtsummary::as_gt() |>
+  gt::tab_options(page.orientation = "landscape") |>
+  gt::tab_options(latex.use_longtable = TRUE)
+
+
+merged_table
+rm(merged_table)
+```
+
+:::
+
+
+
