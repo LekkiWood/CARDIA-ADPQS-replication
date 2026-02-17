@@ -89,6 +89,16 @@ if (!requireNamespace("scales", quietly = TRUE)) {
 if (!requireNamespace("survival", quietly = TRUE)) {
   stop("The {VennDiagram} package is not installed/available in this render session.")
 }
+
+## Load Broom
+if (!requireNamespace("broom", quietly = TRUE)) {
+  stop("The {VennDiagram} package is not installed/available in this render session.")
+}
+
+## Load openssl
+if (!requireNamespace("openssl", quietly = TRUE)) {
+  stop("The {VennDiagram} package is not installed/available in this render session.")
+}
 ```
 
 \newpage
@@ -218,7 +228,6 @@ Note: Visceral fat was not available
 -   Of these, N=`{r} print(length(unique(Traits_QC_info$IDs$nocvd_ids$idno)))` individuals did not have CVD data, leaving a sample of N=`{r} print(length(unique(Traits_QC_info$IDs$cvd_ids$idno)))`
 -   Of these, N=`{r} print(length(unique(Traits_QC_info$IDs$nodiet_ids$idno)))` individuals did not have diet data, and a further N=`{r} print(length(unique(Traits_QC_info$IDs$highenergy_ids$idno)))` had diet data outside the acceptable range (800-8000 kcals / day for men, 600-6000 kcals / day for women) leaving a sample of N=`{r} print(length(unique(Traits_QC_info$IDs$diet_ids$idno)))`.
 -   Sample descriptives are available in @tbl-of-descriptives
-
 
 ::: landscape
 ```{r}
@@ -377,38 +386,202 @@ To create scores:
 
 Three scores were created:
 
-1.  ADPQS score
+1.  APDQS score
 
-  -   The LASSO file included N=`{r} APDQS_QC_info$Sig_targets_n` proteins selected as variables of importance to  ADPQS scores in the LASSO (N=`{r} APDQS_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
-  -   N=`{r} length(APDQS_QC_info$Included_targets)` of these proteins were available in MESA and included in the score. 
+-   The LASSO file included N=`{r} APDQS_QC_info$Sig_targets_n` proteins selected as variables of importance to ADPQS scores in the LASSO (N=`{r} APDQS_QC_info$Duplicate_targets_n` duplicate OlinkIDs).
+-   N=`{r} length(APDQS_QC_info$Included_targets)` of these proteins were available in MESA and included in the score.
 
 2.  Meat score
 
-  -   The LASSO file included N=`{r} meat_QC_info$Sig_targets_n` proteins selected as variables of importance to "Mea" scores in the LASSO (N=`{r} meat_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
-  -   N=`{r} length(meat_QC_info$Included_targets)` of these proteins were available in MESA and included in the scotre. 
+-   The LASSO file included N=`{r} meat_QC_info$Sig_targets_n` proteins selected as variables of importance to "Mea" scores in the LASSO (N=`{r} meat_QC_info$Duplicate_targets_n` duplicate OlinkIDs).
+-   N=`{r} length(meat_QC_info$Included_targets)` of these proteins were available in MESA and included in the scotre.
 
 3.  Plant score
 
-  -   The LASSO file included N=`{r} plant_QC_info$Sig_targets_n` proteins selected as variables of importance to "Plant" scores in the LASSO (N=`{r} plant_QC_info$Duplicate_targets_n` duplicate OlinkIDs). 
-  -   N=`{r} length(plant_QC_info$Included_targets)` of these proteins were available in MESA and included in the score.
-  
+-   The LASSO file included N=`{r} plant_QC_info$Sig_targets_n` proteins selected as variables of importance to "Plant" scores in the LASSO (N=`{r} plant_QC_info$Duplicate_targets_n` duplicate OlinkIDs).
+-   N=`{r} length(plant_QC_info$Included_targets)` of these proteins were available in MESA and included in the score.
 
 # Step 4: Associations of Scores with Events
 
 ## Methods
 
--   Separate cox-proportional hazards models were run for each protein score with time to CVD (hard) and time to death. 
+-   Separate cox-proportional hazards models were run for each protein score with time to CVD (hard) and time to death.
 -   All continuous variables were standardized
 -   For the minimally adjusted models, data were included from N=`{r} survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores)$n` individuals.
 -   For the fully adjusted models, data were included from N=`{r} survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores)$n` individuals.
 
-
 ## CVD results
 
 -   Estimates for the minimally adjusted models are in @tbl-cox-CVD-min
+
+    -   csv file for APDQS score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_CVD_min.csv)
+    -   MD5 for APDQS score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_CVD_min.csv"))))`
+    -   csv file for Plant score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_CVD_min.csv)
+    -   MD5 for Plant score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_CVD_min.csv"))))`
+    -   csv file for Meat score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_CVD_min.csv)
+    -   MD5 for Meat score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_CVD_min.csv"))))`
+
 -   Estimates for the fully adjusted models are in @tbl-cox-CVD-full
 
-:::landscape
+    -   csv file for APDQS score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_CVD_fullyadj.csv)
+    -   MD5 for APDQS score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_CVD_fullyadj.csv"))))`
+    -   csv file for Plant score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_CVD_fullyadj.csv)
+    -   MD5 for Plant score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_CVD_fullyadj.csv"))))`
+    -   csv file for Meat score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_CVD_fullyadj.csv)
+    -   MD5 for Meat score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_CVD_fullyadj.csv"))))`
+
+```{r}
+#| label: save-cox-as-csv
+
+########
+APDQS_CVD_min <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/APDQS_CVD_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(APDQS_CVD_min, file = file_path, row.names = FALSE) 
+rm(APDQS_CVD_min)
+rm(dir_path)
+rm(file_path)
+
+
+Plant_CVD_min <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Plant_CVD_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Plant_CVD_min, file = file_path, row.names = FALSE) 
+rm(Plant_CVD_min)
+rm(dir_path)
+rm(file_path)
+
+Meat_CVD_min <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Meat_CVD_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Meat_CVD_min, file = file_path, row.names = FALSE) 
+rm(Meat_CVD_min)
+rm(dir_path)
+rm(file_path)
+
+########
+
+APDQS_CVD_fullyadj <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/APDQS_CVD_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(APDQS_CVD_fullyadj, file = file_path, row.names = FALSE) 
+rm(APDQS_CVD_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+
+Plant_CVD_fullyadj <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Plant_CVD_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Plant_CVD_fullyadj, file = file_path, row.names = FALSE) 
+rm(Plant_CVD_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+Meat_CVD_fullyadj <- broom::tidy(survival::coxph(Surv(cvdhtt, as.numeric(cvdh)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Meat_CVD_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Meat_CVD_fullyadj, file = file_path, row.names = FALSE) 
+rm(Meat_CVD_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+######
+
+########
+APDQS_Mortality_min <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/APDQS_Mortality_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(APDQS_Mortality_min, file = file_path, row.names = FALSE) 
+rm(APDQS_Mortality_min)
+rm(dir_path)
+rm(file_path)
+
+
+Plant_Mortality_min <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Plant_Mortality_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Plant_Mortality_min, file = file_path, row.names = FALSE) 
+rm(Plant_Mortality_min)
+rm(dir_path)
+rm(file_path)
+
+Meat_Mortality_min <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Meat_Mortality_min.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Meat_Mortality_min, file = file_path, row.names = FALSE) 
+rm(Meat_Mortality_min)
+rm(dir_path)
+rm(file_path)
+
+########
+
+APDQS_Mortality_fullyadj <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(APDQS_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/APDQS_Mortality_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(APDQS_Mortality_fullyadj, file = file_path, row.names = FALSE) 
+rm(APDQS_Mortality_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+
+Plant_Mortality_fullyadj <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(Plant_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Plant_Mortality_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Plant_Mortality_fullyadj, file = file_path, row.names = FALSE) 
+rm(Plant_Mortality_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+Meat_Mortality_fullyadj <- broom::tidy(survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(Meat_protein_score) + scale(age) + scale(BMI) + scale(PA) + scale(eGFR) + factor(sex) + factor(race) + scale(energy) + scale(smoking) + scale(SBP) + scale(HDL) + scale(cholesterol) + factor(diabetes) + factor(htnmeds) + factor(lipidmeds), data = scores), conf.int = TRUE, exponentiate = TRUE)
+file_path <- "/media/Analyses/CARDIA-ADPQS-replication/Results/Meat_Mortality_fullyadj.csv"
+dir_path <- dirname(file_path) # Extract the directory path
+if (!dir.exists(dir_path)) {
+  dir.create(dir_path, showWarnings = FALSE, recursive = TRUE) 
+}
+write.csv(Meat_Mortality_fullyadj, file = file_path, row.names = FALSE) 
+rm(Meat_Mortality_fullyadj)
+rm(dir_path)
+rm(file_path)
+
+
+```
+
+::: landscape
+
 ```{r}
 #| label: tbl-cox-CVD-min
 #| tbl-cap: "Cox Proportional Hazards Models for CVD (minimally adjusted)"
@@ -598,13 +771,32 @@ merged_table <- gtsummary::tbl_merge(
 merged_table
 rm(merged_table)
 ```
+
+:::
+
 \newpage
- 
+
 ## Mortality results
 
 -   Estimates for the minimally adjusted models are in @tbl-cox-death-min
+
+    -   csv file for APDQS score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_Mortality_min.csv)
+    -   MD5 for APDQS score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_Mortality_min.csv"))))`
+    -   csv file for Plant score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_Mortality_min.csv)
+    -   MD5 for Plant score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_Mortality_min.csv"))))`
+    -   csv file for Meat score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_Mortality_min.csv)
+    -   MD5 for Meat score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_Mortality_min.csv"))))`
+
 -   Estimates for the fully adjusted models are in @tbl-cox-death-full
 
+    -   csv file for APDQS score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_Mortality_fullyadj.csv)
+    -   MD5 for APDQS score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/APDQS_Mortality_fullyadj.csv"))))`
+    -   csv file for Plant score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_Mortality_fullyadj.csv)
+    -   MD5 for Plant score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Plant_Mortality_fullyadj.csv"))))`
+    -   csv file for Meat score available [here](https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_Mortality_fullyadj.csv)
+    -   MD5 for Meat score: `{r} print(as.character(openssl::md5(url("https://github.com/LekkiWood/CARDIA-ADPQS-replication/blob/main/Results/Meat_Mortality_fullyadj.csv"))))`
+
+::: landscape
 ```{r}
 #| label: tbl-cox-death-min
 #| tbl-cap: "Cox Proportional Hazards Models for Mortality (minimally adjusted)"
@@ -672,6 +864,7 @@ fit3 <- survival::coxph(Surv(dthtt, as.numeric(dth)) ~ scale(Meat_protein_score)
     "scale(energy)" ~  "Energy intake (kcals/day)",
     "scale(PA)" ~  "Physical activity (MET-min/Wk)")
   ) 
+
 
 merged_table <- gtsummary::tbl_merge(
   tbls = list(fit1, fit3, fit2),
@@ -795,6 +988,4 @@ merged_table
 rm(merged_table)
 ```
 
-
-
-
+:::
