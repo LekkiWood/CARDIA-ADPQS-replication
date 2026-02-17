@@ -46,7 +46,7 @@ build_traits_function <- function(path_E1_covs, path_E1_nutr, path_bridge, path_
                                                    TRUE ~ NA_real_)
                                    )
                   ) |>
-    dplyr::select(idno, cvdh, cvdhtt)
+    dplyr::select(idno, cvdh, cvdhtt, dth, dthtype, dthtt)
   
   ###############
   # E1
